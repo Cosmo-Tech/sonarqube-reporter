@@ -150,3 +150,58 @@ class SonarQubeClient:
         
         response = self._make_request("/api/qualitygates/project_status", params=params)
         return response.get('projectStatus', {})
+        
+    def get_project_analyses(self, project_key, max_count=10):
+        """
+        Get the analysis history for a project.
+        
+        Args:
+            project_key (str): The project key.
+            max_count (int): Maximum number of analyses to retrieve.
+            
+        Returns:
+            list: List of analysis data dictionaries.
+        """
+        params = {
+            'project': project_key,
+            'ps': max_count
+        }
+        
+        response = self._make_request("/api/project_analyses/search", params=params)
+        return response.get('analyses', [])
+        
+    def get_quality_gate_history(self, project_key, max_count=10):
+        """
+        Get the quality gate status history for a project.
+        
+        Args:
+            project_key (str): The project key.
+            max_count (int): Maximum number of historical statuses to retrieve.
+            
+        Returns:
+            list: List of historical quality gate statuses.
+        """
+        analyses = self.get_project_analyses(project_key, max_count)
+        history = []
+        
+        for analysis in analyses:
+            analysis_key = analysis.get('key')
+            if not analysis_key:
+                continue
+                
+            params = {
+                'analysisId': analysis_key
+            }
+            
+            try:
+                response = self._make_request("/api/qualitygates/project_status", params=params)
+                status = response.get('projectStatus', {}).get('status')
+                if status:
+                    history.append({
+                        'date': analysis.get('date'),
+                        'status': status
+                    })
+            except Exception as e:
+                logger.error(f"Error getting quality gate status for analysis {analysis_key}: {e}")
+                
+        return history

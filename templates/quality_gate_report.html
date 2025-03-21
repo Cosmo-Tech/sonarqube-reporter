@@ -36,6 +36,7 @@
             <thead>
                 <tr>
                     <th>Project</th>
+                    <th>History</th>
                     <th>Quality Gate</th>
                     <th>Last Analysis</th>
                     <th>Actions</th>
@@ -45,6 +46,17 @@
                 {% for project in projects %}
                 <tr>
                     <td>{{ project.name }}</td>
+                    <td>
+                        {% if project.history_data and project.history_data['values'] %}
+                        <div class="history-timeline" title="Quality Gate History">
+                            {% for value in project.history_data['values'] %}
+                            <div class="history-square {% if value == 1 %}pass{% elif value == 0.5 %}warn{% else %}fail{% endif %}"></div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="no-data">No history</span>
+                        {% endif %}
+                    </td>
                     <td>
                         {% if project.quality_gate_status == 'OK' %}
                             <span class="status-indicator" style="background-color: {{ styling.pass_color }};"></span>

@@ -46,6 +46,14 @@ class DataProcessor:
             # Get quality gate status
             quality_gate = self.client.get_quality_gate_status(project_key)
             
+            # Get quality gate history
+            logger.debug(f"Retrieving quality gate history for project: {project_name}")
+            quality_gate_history = self.client.get_quality_gate_history(project_key)
+            logger.debug(f"Retrieved {len(quality_gate_history)} historical quality gate statuses")
+            
+            # Process history for visualization
+            history_data = self._process_history_for_visualization(quality_gate_history)
+            
             # Add quality gate status to project data
             project_data = {
                 'key': project_key,
@@ -53,7 +61,9 @@ class DataProcessor:
                 'last_analysis_date': self._format_date(project.get('lastAnalysisDate')),
                 'quality_gate_status': quality_gate.get('status', 'NONE'),
                 'quality_gate_conditions': quality_gate.get('conditions', []),
-                'url': f"{self.sonarqube_url}/dashboard?id={project_key}"
+                'url': f"{self.sonarqube_url}/dashboard?id={project_key}",
+                'quality_gate_history': quality_gate_history,
+                'history_data': history_data
             }
             
             projects_data.append(project_data)
@@ -120,6 +130,47 @@ class DataProcessor:
         logger.debug(f"Calculated overall status: {overall_status}")
         return overall_status
 
+    def _process_history_for_visualization(self, history):
+        """
+        Process quality gate history for visual representation.
+        
+        Args:
+            history (list): List of historical quality gate statuses.
+            
+        Returns:
+            dict: Processed data for quality gate history visualization.
+        """
+        if not history:
+            return {
+                'values': [],
+                'colors': []
+            }
+            
+        # Reverse to get chronological order (oldest to newest)
+        history = list(reversed(history))
+        
+        values = []
+        colors = []
+        
+        for item in history:
+            status = item.get('status')
+            
+            # Map status to numeric value for sparkline
+            if status == 'OK':
+                values.append(1)  # Pass
+                colors.append('#00aa00')  # Green
+            elif status == 'WARN':
+                values.append(0.5)  # Warning
+                colors.append('#ed7d20')  # Orange
+            else:
+                values.append(0)  # Fail
+                colors.append('#d4333f')  # Red
+                
+        return {
+            'values': values,
+            'colors': colors
+        }
+    
     def _format_date(self, date_string):
         """
         Format a date string from SonarQube.
