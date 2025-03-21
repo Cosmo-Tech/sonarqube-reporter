@@ -5,7 +5,6 @@ Processes and organizes data from SonarQube API for quality gate report generati
 
 import logging
 from datetime import datetime
-from rich.logging import RichHandler
 
 # Set up logging
 logger = logging.getLogger("sonarqube_reporter")
@@ -34,143 +33,136 @@ class DataProcessor:
         logger.debug("Retrieving all projects from SonarQube")
         projects = self.client.get_projects()
         logger.debug(f"Retrieved {len(projects)} projects from SonarQube")
-        
+
         projects_data = []
 
         for project in projects:
-            project_key = project['key']
-            project_name = project.get('name', project_key)
-            
+            project_key = project["key"]
+            project_name = project.get("name", project_key)
+
             logger.debug(f"Processing project: {project_name} ({project_key})")
-            
+
             # Get quality gate status
             quality_gate = self.client.get_quality_gate_status(project_key)
-            
+
             # Get quality gate history
             logger.debug(f"Retrieving quality gate history for project: {project_name}")
             quality_gate_history = self.client.get_quality_gate_history(project_key)
-            logger.debug(f"Retrieved {len(quality_gate_history)} historical quality gate statuses")
-            
+            logger.debug(
+                f"Retrieved {len(quality_gate_history)} historical quality gate statuses"
+            )
+
             # Process history for visualization
             history_data = self._process_history_for_visualization(quality_gate_history)
-            
+
             # Add quality gate status to project data
             project_data = {
-                'key': project_key,
-                'name': project_name,
-                'last_analysis_date': self._format_date(project.get('lastAnalysisDate')),
-                'quality_gate_status': quality_gate.get('status', 'NONE'),
-                'quality_gate_conditions': quality_gate.get('conditions', []),
-                'url': f"{self.sonarqube_url}/dashboard?id={project_key}",
-                'quality_gate_history': quality_gate_history,
-                'history_data': history_data
+                "key": project_key,
+                "name": project_name,
+                "last_analysis_date": self._format_date(
+                    project.get("lastAnalysisDate")
+                ),
+                "quality_gate_status": quality_gate.get("status", "NONE"),
+                "quality_gate_conditions": quality_gate.get("conditions", []),
+                "url": f"{self.sonarqube_url}/dashboard?id={project_key}",
+                "quality_gate_history": quality_gate_history,
+                "history_data": history_data,
             }
-            
+
             projects_data.append(project_data)
-            
+
         logger.info(f"Processed data for {len(projects_data)} projects")
         return projects_data, self._calculate_overall_status(projects_data)
-        
+
     def _calculate_overall_status(self, projects_data):
         """
         Calculate the overall status based on all projects.
-        
+
         Args:
             projects_data (list): List of project data dictionaries.
-            
+
         Returns:
             dict: Overall status information.
         """
         if not projects_data:
             logger.debug("No projects data available for overall status calculation")
             return None
-            
+
         # Count projects by status
-        status_counts = {
-            'OK': 0,
-            'WARN': 0,
-            'ERROR': 0,
-            'NONE': 0
-        }
-        
+        status_counts = {"OK": 0, "WARN": 0, "ERROR": 0, "NONE": 0}
+
         for project in projects_data:
-            status = project.get('quality_gate_status', 'NONE')
+            status = project.get("quality_gate_status", "NONE")
             status_counts[status] = status_counts.get(status, 0) + 1
-            
+
         logger.debug(f"Status counts: {status_counts}")
-        
+
         # Determine overall status
-        if status_counts.get('ERROR', 0) > 0:
+        if status_counts.get("ERROR", 0) > 0:
             overall_status = {
-                'status': 'ERROR',
-                'label': 'FAILED',
-                'css_class': 'fail',
-                'color': '#d4333f',
-                'message': f"{status_counts.get('ERROR', 0)} projects failed quality gate"
+                "status": "ERROR",
+                "label": "FAILED",
+                "css_class": "fail",
+                "color": "#d4333f",
+                "message": f"{status_counts.get('ERROR', 0)} projects failed quality gate",
             }
-        elif status_counts.get('WARN', 0) > 0:
+        elif status_counts.get("WARN", 0) > 0:
             overall_status = {
-                'status': 'WARN',
-                'label': 'WARNING',
-                'css_class': 'warn',
-                'color': '#ed7d20',
-                'message': f"{status_counts.get('WARN', 0)} projects have warnings"
+                "status": "WARN",
+                "label": "WARNING",
+                "css_class": "warn",
+                "color": "#ed7d20",
+                "message": f"{status_counts.get('WARN', 0)} projects have warnings",
             }
-        elif status_counts.get('OK', 0) > 0:
+        elif status_counts.get("OK", 0) > 0:
             overall_status = {
-                'status': 'OK',
-                'label': 'PASSED',
-                'css_class': 'pass',
-                'color': '#00aa00',
-                'message': 'All projects passed quality gate'
+                "status": "OK",
+                "label": "PASSED",
+                "css_class": "pass",
+                "color": "#00aa00",
+                "message": "All projects passed quality gate",
             }
         else:
             overall_status = None
-            
+
         logger.debug(f"Calculated overall status: {overall_status}")
         return overall_status
 
     def _process_history_for_visualization(self, history):
         """
         Process quality gate history for visual representation.
-        
+
         Args:
             history (list): List of historical quality gate statuses.
-            
+
         Returns:
             dict: Processed data for quality gate history visualization.
         """
         if not history:
-            return {
-                'values': [],
-                'colors': []
-            }
-            
+            return {"values": [], "colors": []}
+
         # Reverse to get chronological order (oldest to newest)
         history = list(reversed(history))
-        
+
         values = []
         colors = []
-        
+
         for item in history:
-            status = item.get('status')
-            
+            status = item.get("status")
+
             # Map status to numeric value for sparkline
-            if status == 'OK':
+            if status == "OK":
                 values.append(1)  # Pass
-                colors.append('#00aa00')  # Green
-            elif status == 'WARN':
+                colors.append("#00aa00")  # Green
+            elif status == "WARN":
                 values.append(0.5)  # Warning
-                colors.append('#ed7d20')  # Orange
+                colors.append("#ed7d20")  # Orange
             else:
                 values.append(0)  # Fail
-                colors.append('#d4333f')  # Red
-                
-        return {
-            'values': values,
-            'colors': colors
-        }
-    
+                colors.append("#d4333f")  # Red
+
+        return {"values": values, "colors": colors}
+
     def _format_date(self, date_string):
         """
         Format a date string from SonarQube.
@@ -184,11 +176,11 @@ class DataProcessor:
         if not date_string:
             logger.debug("Empty date string, returning N/A")
             return "N/A"
-        
+
         try:
             # SonarQube date format: YYYY-MM-DDThh:mm:ss+0000
-            date_obj = datetime.strptime(date_string.split('+')[0], '%Y-%m-%dT%H:%M:%S')
-            formatted_date = date_obj.strftime('%Y-%m-%d %H:%M:%S')
+            date_obj = datetime.strptime(date_string.split("+")[0], "%Y-%m-%dT%H:%M:%S")
+            formatted_date = date_obj.strftime("%Y-%m-%d %H:%M:%S")
             logger.debug(f"Formatted date: {date_string} -> {formatted_date}")
             return formatted_date
         except (ValueError, TypeError) as e:

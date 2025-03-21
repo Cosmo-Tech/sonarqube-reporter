@@ -19,20 +19,28 @@ class SonarQubeClient:
         """
         self.base_url = url
         self.token = token
-        
+
         # Debug token information
         if not token:
-            logger.error("SonarQube token is None. Please set the SONARQUBE_REPORT_TOKEN environment variable.")
-            raise ValueError("SonarQube token is None. Please set the SONARQUBE_REPORT_TOKEN environment variable.")
+            logger.error(
+                "SonarQube token is None. Please set the SONARQUBE_REPORT_TOKEN environment variable."
+            )
+            raise ValueError(
+                "SonarQube token is None. Please set the SONARQUBE_REPORT_TOKEN environment variable."
+            )
         else:
             # Mask the token for security in logs
-            masked_token = token[:4] + '*' * (len(token) - 8) + token[-4:] if len(token) > 8 else '****'
+            masked_token = (
+                token[:4] + "*" * (len(token) - 8) + token[-4:]
+                if len(token) > 8
+                else "****"
+            )
             logger.debug(f"Using SonarQube token: {masked_token}")
-        
-        self.auth = HTTPBasicAuth(token, '')
+
+        self.auth = HTTPBasicAuth(token, "")
         self.session = requests.Session()
         self.session.auth = self.auth
-        
+
         # Test connection
         self.test_connection()
 
@@ -43,15 +51,19 @@ class SonarQubeClient:
             response = self.session.get(f"{self.base_url}/api/system/status")
             response.raise_for_status()
             status_info = response.json()
-            logger.info(f"Successfully connected to SonarQube server at {self.base_url}")
+            logger.info(
+                f"Successfully connected to SonarQube server at {self.base_url}"
+            )
             logger.debug(f"SonarQube server status: {status_info}")
             return True
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to connect to SonarQube server: {e}")
-            if hasattr(e, 'response') and e.response is not None:
+            if hasattr(e, "response") and e.response is not None:
                 logger.debug(f"Response status code: {e.response.status_code}")
                 logger.debug(f"Response content: {e.response.text}")
-            raise ConnectionError(f"Could not connect to SonarQube server at {self.base_url}: {e}")
+            raise ConnectionError(
+                f"Could not connect to SonarQube server at {self.base_url}: {e}"
+            )
 
     def _make_request(self, endpoint, method="GET", params=None, data=None):
         """
@@ -67,13 +79,13 @@ class SonarQubeClient:
             dict: The JSON response from the API.
         """
         url = f"{self.base_url}{endpoint}"
-        
+
         logger.debug(f"Making {method} request to {endpoint}")
         if params:
             logger.debug(f"Request parameters: {params}")
         if data:
             logger.debug(f"Request data: {data}")
-        
+
         try:
             if method == "GET":
                 response = self.session.get(url, params=params)
@@ -82,14 +94,14 @@ class SonarQubeClient:
             else:
                 logger.error(f"Unsupported HTTP method: {method}")
                 raise ValueError(f"Unsupported HTTP method: {method}")
-            
+
             response.raise_for_status()
             json_response = response.json()
             logger.debug(f"API request successful: {endpoint}")
             return json_response
         except requests.exceptions.RequestException as e:
             logger.error(f"API request failed: {e}")
-            if hasattr(e, 'response') and e.response is not None:
+            if hasattr(e, "response") and e.response is not None:
                 logger.error(f"Response status code: {e.response.status_code}")
                 logger.error(f"Response content: {e.response.text}")
             raise
@@ -107,30 +119,27 @@ class SonarQubeClient:
         logger.debug(f"Fetching all projects with page size {page_size}")
         projects = []
         page = 1
-        
+
         while True:
             logger.debug(f"Fetching projects page {page}")
-            params = {
-                'p': page,
-                'ps': page_size
-            }
-            
+            params = {"p": page, "ps": page_size}
+
             response = self._make_request("/api/projects/search", params=params)
-            
-            components = response.get('components', [])
+
+            components = response.get("components", [])
             if not components:
                 logger.debug(f"No more projects found on page {page}")
                 break
-            
+
             logger.debug(f"Found {len(components)} projects on page {page}")
             projects.extend(components)
-            
+
             if len(components) < page_size:
                 logger.debug(f"Reached last page of projects (page {page})")
                 break
-                
+
             page += 1
-        
+
         logger.info(f"Retrieved {len(projects)} projects from SonarQube")
         return projects
 
@@ -144,64 +153,58 @@ class SonarQubeClient:
         Returns:
             dict: Quality gate status information.
         """
-        params = {
-            'projectKey': project_key
-        }
-        
+        params = {"projectKey": project_key}
+
         response = self._make_request("/api/qualitygates/project_status", params=params)
-        return response.get('projectStatus', {})
-        
+        return response.get("projectStatus", {})
+
     def get_project_analyses(self, project_key, max_count=10):
         """
         Get the analysis history for a project.
-        
+
         Args:
             project_key (str): The project key.
             max_count (int): Maximum number of analyses to retrieve.
-            
+
         Returns:
             list: List of analysis data dictionaries.
         """
-        params = {
-            'project': project_key,
-            'ps': max_count
-        }
-        
+        params = {"project": project_key, "ps": max_count}
+
         response = self._make_request("/api/project_analyses/search", params=params)
-        return response.get('analyses', [])
-        
+        return response.get("analyses", [])
+
     def get_quality_gate_history(self, project_key, max_count=10):
         """
         Get the quality gate status history for a project.
-        
+
         Args:
             project_key (str): The project key.
             max_count (int): Maximum number of historical statuses to retrieve.
-            
+
         Returns:
             list: List of historical quality gate statuses.
         """
         analyses = self.get_project_analyses(project_key, max_count)
         history = []
-        
+
         for analysis in analyses:
-            analysis_key = analysis.get('key')
+            analysis_key = analysis.get("key")
             if not analysis_key:
                 continue
-                
-            params = {
-                'analysisId': analysis_key
-            }
-            
+
+            params = {"analysisId": analysis_key}
+
             try:
-                response = self._make_request("/api/qualitygates/project_status", params=params)
-                status = response.get('projectStatus', {}).get('status')
+                response = self._make_request(
+                    "/api/qualitygates/project_status", params=params
+                )
+                status = response.get("projectStatus", {}).get("status")
                 if status:
-                    history.append({
-                        'date': analysis.get('date'),
-                        'status': status
-                    })
+                    history.append({"date": analysis.get("date"), "status": status})
             except Exception as e:
-                logger.error(f"Error getting quality gate status for analysis {analysis_key}: {e}")
-                
+                logger.error(
+                    f"Error getting quality gate status for analysis {analysis_key}: {e}"
+                )
+
         return history

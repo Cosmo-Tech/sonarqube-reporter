@@ -11,14 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 @click.command()
-@click.option(
-    "--verbose", "-v",
-    is_flag=True,
-    help="Enable verbose output"
-)
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 def main(verbose):
     """Generate a quality gate report from SonarQube data.
-    
+
     This tool connects to a SonarQube server, retrieves project data,
     and generates an HTML report showing the quality gate status for each project.
     """
@@ -36,32 +32,35 @@ def main(verbose):
     projects_data, overall_status = projects_data_tuple
     logger.info(f"[bold green]Found {len(projects_data)} projects")
     if overall_status:
-        logger.info(f"[bold {overall_status['css_class']}]Overall status: {overall_status['label']} QUALITY GATE")
-    
+        logger.info(
+            f"[bold {overall_status['css_class']}]Overall status: {overall_status['label']} QUALITY GATE"
+        )
+
     # Create a simple config object with hardcoded values
     class SimpleConfig:
         def get_sonarqube_url(self):
             return "http://localhost:9000"
-            
+
         def get_styling(self):
             return {
-                'primary_color': '#4b9fd5',
-                'secondary_color': '#236a97',
-                'pass_color': '#00aa00',
-                'fail_color': '#d4333f',
-                'warning_color': '#ed7d20'
+                "primary_color": "#4b9fd5",
+                "secondary_color": "#236a97",
+                "pass_color": "#00aa00",
+                "fail_color": "#d4333f",
+                "warning_color": "#ed7d20",
             }
-            
+
         def get_quality_gate_report_path(self):
             # Ensure reports directory exists
             os.makedirs("reports", exist_ok=True)
             return "reports/quality_gate_report.html"
-    
+
     # Initialize report generator with simple config
     report_generator = ReportGenerator(SimpleConfig())
     # Generate quality gate report
     report_generator.generate_quality_gate_report(projects_data_tuple)
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
