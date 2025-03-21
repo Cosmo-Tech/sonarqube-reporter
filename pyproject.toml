@@ -29,6 +29,5 @@ packages = ["src"]
 include = [
     "src",
     "templates",
-    "README.md",
-    "config.ini",
+    "README.md"
 ]
