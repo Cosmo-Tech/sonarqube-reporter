@@ -17,6 +17,30 @@ header {
     border-radius: 5px;
 }
 
+header.pass-header {
+    background-color: var(--pass-color, #00aa00);
+}
+
+header.warn-header {
+    background-color: var(--warning-color, #ed7d20);
+}
+
+header.fail-header {
+    background-color: var(--fail-color, #d4333f);
+}
+
+.pass-text {
+    color: var(--pass-color, #00aa00);
+}
+
+.warn-text {
+    color: var(--warning-color, #ed7d20);
+}
+
+.fail-text {
+    color: var(--fail-color, #d4333f);
+}
+
 h1, h2, h3 {
     margin-top: 0;
 }
@@ -71,30 +95,6 @@ tr:hover {
     vertical-align: middle;
 }
 
-.overall-status {
-    display: flex;
-    align-items: center;
-    padding: 15px;
-    margin: 20px 0;
-    border-radius: 5px;
-    font-size: 1.2em;
-    font-weight: bold;
-}
-
-.overall-status.pass {
-    background-color: rgba(0, 170, 0, 0.1);
-    border: 1px solid var(--pass-color, #00aa00);
-}
-
-.overall-status.fail {
-    background-color: rgba(212, 51, 63, 0.1);
-    border: 1px solid var(--fail-color, #d4333f);
-}
-
-.overall-status.warn {
-    background-color: rgba(237, 125, 32, 0.1);
-    border: 1px solid var(--warning-color, #ed7d20);
-}
 
 footer {
     margin-top: 30px;

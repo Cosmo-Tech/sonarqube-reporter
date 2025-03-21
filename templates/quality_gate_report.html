@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>{{ title }}{% if overall_status %} - {{ overall_status.label }} QUALITY GATE{% endif %}</title>
     <link rel="stylesheet" href="css/report_styles.css">
     <style>
         :root {
@@ -16,22 +16,21 @@
     </style>
 </head>
 <body>
-    <header>
-        <h1>{{ title }}</h1>
+    <header {% if overall_status %}class="{{ overall_status.css_class }}-header"{% endif %}>
+        <h1>
+            {{ title }}
+            {% if overall_status %}
+            <span class="status-indicator" style="background-color: {{ overall_status.color }};"></span>
+            <span class="{{ overall_status.css_class }}-text">{{ overall_status.label }} QUALITY GATE</span>
+            {% endif %}
+        </h1>
         <div class="info">Generated on: {{ generation_date }}</div>
         <div class="info">SonarQube Server: <a href="{{ sonarqube_url }}" class="white-link">{{ sonarqube_url }}</a></div>
     </header>
 
     <main>
         <h2>Project Quality Gates</h2>
-        <p>This report shows the quality gate status for all projects. It is intended for project management and go/no-go decisions.</p>
-        
-        {% if overall_status %}
-        <div class="overall-status {{ overall_status.css_class }}">
-            <span class="status-indicator" style="background-color: {{ overall_status.color }};"></span>
-            <span>Overall Status: {{ overall_status.label }}</span>
-        </div>
-        {% endif %}
+        <p>This report shows the quality gate status for all projects.</p>
         
         <table>
             <thead>

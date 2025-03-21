@@ -48,13 +48,7 @@ class ReportGenerator:
         Returns:
             str: Path to the generated report.
         """
-        # Unpack the tuple
-        if isinstance(projects_data_tuple, tuple) and len(projects_data_tuple) == 2:
-            projects_data, overall_status = projects_data_tuple
-        else:
-            # For backward compatibility
-            projects_data = projects_data_tuple
-            overall_status = None
+        projects_data, overall_status = projects_data_tuple
             
         logger.debug("Loading quality gate report template")
         template = self.env.get_template('quality_gate_report.html')
@@ -63,8 +57,14 @@ class ReportGenerator:
         generation_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         logger.debug(f"Report generation date: {generation_date}")
         
+        # Determine title based on overall status
+        if overall_status:
+            title = f"[{overall_status['label']}] SonarQube Quality Gate Report"
+        else:
+            title = 'SonarQube Quality Gate Report'
+        
         context = {
-            'title': 'SonarQube Quality Gate Report',
+            'title': title,
             'generation_date': generation_date,
             'sonarqube_url': self.sonarqube_url,
             'projects': projects_data,

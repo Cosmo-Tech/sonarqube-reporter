@@ -32,8 +32,11 @@ def main(verbose):
     data_processor = DataProcessor(client)
     # Get projects data
     logger.info("Retrieving projects data from SonarQube")
-    projects_data = data_processor.get_all_projects_data()
+    projects_data_tuple = data_processor.get_all_projects_data()
+    projects_data, overall_status = projects_data_tuple
     logger.info(f"[bold green]Found {len(projects_data)} projects")
+    if overall_status:
+        logger.info(f"[bold {overall_status['css_class']}]Overall status: {overall_status['label']} QUALITY GATE")
     
     # Create a simple config object with hardcoded values
     class SimpleConfig:
@@ -57,7 +60,7 @@ def main(verbose):
     # Initialize report generator with simple config
     report_generator = ReportGenerator(SimpleConfig())
     # Generate quality gate report
-    report_generator.generate_quality_gate_report(projects_data)
+    report_generator.generate_quality_gate_report(projects_data_tuple)
     return 0
 
 if __name__ == "__main__":
