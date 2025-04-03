@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 
 # Set up logging
-logger = logging.getLogger("sonarqube_reporter")
+logger = logging.getLogger(__name__)
 
 
 class DataProcessor:

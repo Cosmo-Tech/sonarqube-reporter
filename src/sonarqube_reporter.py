@@ -8,6 +8,7 @@ from src.data_processor import DataProcessor
 from src.report_generator import ReportGenerator
 
 logger = logging.getLogger(__name__)
+logger.basicConfig(level=logging.INFO)
 
 
 @click.command()

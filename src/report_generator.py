@@ -9,7 +9,7 @@ from datetime import datetime
 from jinja2 import Environment, FileSystemLoader
 
 # Set up logging
-logger = logging.getLogger("sonarqube_reporter")
+logger = logging.getLogger(__name__)
 
 
 class ReportGenerator:
