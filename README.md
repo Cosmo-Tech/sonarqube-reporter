@@ -30,5 +30,5 @@ The report will be generated in the `./reports` directory.
 Configure crontabl by running `crontab -e` and adapt the following:
 
 ```
-0 1 * * * export SONARQUBE_REPORT_TOKEN=<replace with Global Scan Token>; PATH=$PATH:/usr/local/bin; $HOME/sonarqube-reporter/.venv/bin/sonarqube-reporter > $HOME/sonarqube_reporter_last_run.log 2&>1
+0 1 * * * export SONARQUBE_REPORT_TOKEN=<replace with Global Scan Token>; PATH=$PATH:/usr/local/bin; $HOME/sonarqube-reporter/.venv/bin/sonarqube-reporter > $HOME/sonarqube_reporter_last_run.log 2>&1 && cp -r $HOME/sonarqube-reporter/reports/* /var/www/html
 ```
