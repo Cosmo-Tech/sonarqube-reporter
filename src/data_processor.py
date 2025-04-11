@@ -3,6 +3,8 @@ Data processing module for SonarQube Reporter.
 Processes and organizes data from SonarQube API for quality gate report generation.
 """
 
+import os
+import yaml
 import logging
 from datetime import datetime
 
@@ -21,6 +23,7 @@ class DataProcessor:
             sonarqube_client (SonarQubeClient): The SonarQube API client.
         """
         self.client = sonarqube_client
+        self.included_projects = self._load_project_config()
         self.sonarqube_url = self.client.base_url
 
     def get_all_projects_data(self):
@@ -31,8 +34,16 @@ class DataProcessor:
             list: List of project data dictionaries.
         """
         logger.debug("Retrieving all projects from SonarQube")
-        projects = self.client.get_projects()
-        logger.debug(f"Retrieved {len(projects)} projects from SonarQube")
+        all_projects = self.client.get_projects()
+        logger.debug(f"Retrieved {len(all_projects)} projects from SonarQube")
+
+        # Filter projects if configuration exists
+        if self.included_projects:
+            projects = [p for p in all_projects if p["key"] in self.included_projects]
+            logger.info(f"Filtered to {len(projects)} projects based on configuration")
+        else:
+            projects = all_projects
+            logger.info("No project filtering configured, including all projects")
 
         projects_data = []
 
@@ -186,3 +197,39 @@ class DataProcessor:
         except (ValueError, TypeError) as e:
             logger.debug(f"Error formatting date {date_string}: {str(e)}")
             return date_string
+
+    def _load_project_config(self):
+        """
+        Load project filtering configuration from report-config.yaml.
+
+        Returns:
+            list: List of project keys to include, or empty list if no config exists.
+        """
+        try:
+            config_path = "report-config.yaml"
+            if not os.path.exists(config_path):
+                logger.info("No report-config.yaml found, will include all projects")
+                return []
+
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f)
+
+            if not config or not isinstance(config, dict):
+                logger.warning("Invalid configuration format in report-config.yaml")
+                return []
+
+            projects = config.get('projects', [])
+            if not projects:
+                logger.info("No projects specified in config, will include all projects")
+                return []
+
+            if not isinstance(projects, list):
+                logger.warning("Projects configuration must be a list")
+                return []
+
+            logger.info(f"Loaded {len(projects)} projects from configuration")
+            return projects
+
+        except Exception as e:
+            logger.error(f"Error loading project configuration: {str(e)}")
+            return []
