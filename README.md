@@ -1,6 +1,6 @@
 # SonarQube Reporter
 
-A Python tool to generate a quality gate report from SonarQube data.It creates a simple html report with the quality gate status for each project using the sonarqube web-api
+A Python tool to generate a quality gate report from SonarQube data.It creates a simple html report with the quality gate status selected projects using the sonarqube web-api
 
 ## Requirements
 
@@ -16,6 +16,7 @@ A Python tool to generate a quality gate report from SonarQube data.It creates a
 uv venv
 uv pip install .
 ```
+Adapt the `report-config.yaml` example file and run the script
 
 ```bash
 # Set the environment variable

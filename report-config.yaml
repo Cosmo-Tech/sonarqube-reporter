@@ -1,0 +1,7 @@
+# SonarQube Reporter Configuration
+# List of project keys to include in the report
+# If empty, all projects will be included
+projects:
+  - "example-project"
+  - "another-project"
+  # Add more project keys as needed
