@@ -28,18 +28,21 @@ class DataProcessor:
 
     def get_all_projects_data(self):
         """
-        Get data for all projects including quality gate status.
+        Get data for all projects including quality gate status, organized by groups.
 
         Returns:
-            list: List of project data dictionaries.
+            tuple: (dict of grouped project data, overall status)
         """
         logger.debug("Retrieving all projects from SonarQube")
         all_projects = self.client.get_projects()
         logger.debug(f"Retrieved {len(all_projects)} projects from SonarQube")
 
+        # Load configuration including groups
+        included_projects, _ = self._load_project_config()
+
         # Filter projects if configuration exists
-        if self.included_projects:
-            projects = [p for p in all_projects if p["key"] in self.included_projects]
+        if included_projects:
+            projects = [p for p in all_projects if p["key"] in included_projects]
             logger.info(f"Filtered to {len(projects)} projects based on configuration")
         else:
             projects = all_projects
@@ -75,7 +78,7 @@ class DataProcessor:
                 ),
                 "quality_gate_status": quality_gate.get("status", "NONE"),
                 "quality_gate_conditions": quality_gate.get("conditions", []),
-                "url": f"{self.sonarqube_url}/dashboard?id={project_key}",
+                "url": f"{self.sonarqube_url.rstrip('/')}/dashboard?id={project_key}",
                 "quality_gate_history": quality_gate_history,
                 "history_data": history_data,
             }
@@ -83,7 +86,12 @@ class DataProcessor:
             projects_data.append(project_data)
 
         logger.info(f"Processed data for {len(projects_data)} projects")
-        return projects_data, self._calculate_overall_status(projects_data)
+        
+        # Organize projects into groups
+        grouped_data = self._process_groups(projects_data)
+        overall_status = self._calculate_overall_status(projects_data)
+        
+        return grouped_data, overall_status
 
     def _calculate_overall_status(self, projects_data):
         """
@@ -203,33 +211,137 @@ class DataProcessor:
         Load project filtering configuration from report-config.yaml.
 
         Returns:
-            list: List of project keys to include, or empty list if no config exists.
+            tuple: (list of project keys to include, list of group configurations)
         """
         try:
             config_path = "report-config.yaml"
             if not os.path.exists(config_path):
                 logger.info("No report-config.yaml found, will include all projects")
-                return []
+                return [], []
 
             with open(config_path, 'r') as f:
                 config = yaml.safe_load(f)
 
             if not config or not isinstance(config, dict):
                 logger.warning("Invalid configuration format in report-config.yaml")
-                return []
+                return [], []
 
+            # Load groups configuration
+            groups = config.get('groups', [])
+            if not isinstance(groups, list):
+                logger.warning("Groups configuration must be a list")
+                groups = []
+
+            # Load ungrouped projects
             projects = config.get('projects', [])
-            if not projects:
-                logger.info("No projects specified in config, will include all projects")
-                return []
-
             if not isinstance(projects, list):
                 logger.warning("Projects configuration must be a list")
-                return []
+                projects = []
 
-            logger.info(f"Loaded {len(projects)} projects from configuration")
-            return projects
+            # Combine all project keys for filtering
+            all_projects = projects.copy()
+            for group in groups:
+                if isinstance(group, dict) and 'projects' in group:
+                    all_projects.extend(group['projects'])
+
+            logger.info(f"Loaded {len(all_projects)} projects and {len(groups)} groups from configuration")
+            return all_projects, groups
 
         except Exception as e:
             logger.error(f"Error loading project configuration: {str(e)}")
-            return []
+            return [], []
+
+    def _calculate_group_status(self, projects):
+        """
+        Calculate the overall status for a group of projects.
+
+        Args:
+            projects (list): List of project data dictionaries.
+
+        Returns:
+            dict: Status information for the group.
+        """
+        if not projects:
+            return None
+
+        # Count projects by status
+        status_counts = {"OK": 0, "WARN": 0, "ERROR": 0, "NONE": 0}
+        for project in projects:
+            status = project.get("quality_gate_status", "NONE")
+            status_counts[status] = status_counts.get(status, 0) + 1
+
+        # Determine overall status
+        if status_counts.get("ERROR", 0) > 0:
+            return {
+                "status": "ERROR",
+                "label": "FAILED",
+                "css_class": "fail",
+                "color": "var(--fail-color)",
+                "message": f"{status_counts['ERROR']} failed"
+            }
+        elif status_counts.get("WARN", 0) > 0:
+            return {
+                "status": "WARN",
+                "label": "WARNING",
+                "css_class": "warn",
+                "color": "var(--warning-color)",
+                "message": f"{status_counts['WARN']} warnings"
+            }
+        elif status_counts.get("OK", 0) > 0:
+            return {
+                "status": "OK",
+                "label": "PASSED",
+                "css_class": "pass",
+                "color": "var(--pass-color)",
+                "message": "All passed"
+            }
+        return None
+
+    def _process_groups(self, projects_data):
+        """
+        Organize projects into their defined groups and calculate group statuses.
+
+        Args:
+            projects_data (list): List of project data dictionaries.
+
+        Returns:
+            dict: Projects organized by groups and "ungrouped" section with status information.
+        """
+        _, groups = self._load_project_config()
+        
+        # Initialize result structure
+        grouped_projects = {
+            "groups": [],
+            "ungrouped": []
+        }
+
+        # Create a map of project key to project data for efficient lookup
+        project_map = {p["key"]: p for p in projects_data}
+
+        # Process each group
+        for group in groups:
+            group_projects = []
+            
+            # Add projects to group
+            for project_key in group.get("projects", []):
+                if project_key in project_map:
+                    group_projects.append(project_map[project_key])
+                    # Mark project as processed
+                    project_map.pop(project_key)
+
+            # Calculate group status
+            group_data = {
+                "name": group.get("name", "Unnamed Group"),
+                "projects": group_projects,
+                "status": self._calculate_group_status(group_projects)
+            }
+            
+            grouped_projects["groups"].append(group_data)
+
+        # Add remaining projects to ungrouped section with status
+        ungrouped_projects = list(project_map.values())
+        grouped_projects["ungrouped"] = ungrouped_projects
+        grouped_projects["ungrouped_status"] = self._calculate_group_status(ungrouped_projects)
+
+        logger.info(f"Processed {len(groups)} groups and {len(ungrouped_projects)} ungrouped projects")
+        return grouped_projects
