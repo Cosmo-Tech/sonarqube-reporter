@@ -50,10 +50,80 @@ h1, h2, h3 {
     font-size: 0.9em;
 }
 
+/* Group styles */
+.group-section {
+    margin: 20px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.group-header {
+    padding: 12px 15px;
+    background: var(--primary-color, #4b9fd5);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.group-header-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.group-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.pass-header {
+    background-color: var(--pass-color, #00aa00);
+}
+
+.warn-header {
+    background-color: var(--warning-color, #ed7d20);
+}
+
+.fail-header {
+    background-color: var(--fail-color, #d4333f);
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.group-header:hover {
+    background-color: #2d6d94;
+}
+
+.group-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 500;
+}
+
+.group-header.collapsed .toggle-indicator {
+    transform: rotate(-90deg);
+}
+
+.toggle-indicator {
+    transition: transform 0.2s;
+    font-size: 0.8em;
+}
+
+.group-content {
+    padding: 15px;
+    background: white;
+}
+
+/* Table styles */
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
+    margin: 0 0 15px 0;
 }
 
 th, td {
@@ -94,7 +164,6 @@ tr:hover {
     margin-right: 10px;
     vertical-align: middle;
 }
-
 
 /* History styles */
 .history-timeline {
@@ -151,4 +220,8 @@ a:hover {
 
 a.white-link {
     color: white;
+}
+
+.project-link {
+    font-weight: 500;
 }

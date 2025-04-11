@@ -28,7 +28,7 @@ def main(verbose):
         logger.debug("Verbose mode enabled")
     token = os.getenv("SONARQUBE_REPORT_TOKEN")
 
-    client = SonarQubeClient("http://localhost:9000", token)
+    client = SonarQubeClient("https://sonarqube.cosmotech.com/", token)
     # Initialize data processor
     data_processor = DataProcessor(client)
     # Get projects data
