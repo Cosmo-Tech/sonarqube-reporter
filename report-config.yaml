@@ -1,7 +1,46 @@
 # SonarQube Reporter Configuration
-# List of project keys to include in the report
-# If empty, all projects will be included
-projects:
-  - "example-project"
-  - "another-project"
-  # Add more project keys as needed
+
+# Project groups for organization in the report
+groups:
+  - name: "APIs and clients"
+    projects:
+      - "cosmotech-api-main"
+      - "cosmotech-api-release/v3.3"
+      - "cosmotech-api-release/v4-onprem"
+      - "cosmotech-api-common-main"
+      - "cosmotech-api-common-release/v3.3"
+      - "cosmotech-api-common-release/v4-onprem"
+      - "cosmotech-api-python-client-main"
+      - "cosmotech-api-typescript-client-main"
+      - "cosmotech-modeling-api-main"
+      - "cosmotech-modeling-api-typescript-client-main"
+
+  - name: "Web Applications"
+    projects:
+      - "azure-sample-webapp-main"
+      - "azure-sample-webapp-release/7.0"
+      - "webapp-component-ui-main"
+      - "webapp-component-ui-release/10.0"
+      - "webapp-component-core-main"
+      - "webapp-component-azure-main"
+
+  - name: "Infrastructure"
+    projects:
+      - "terraform-kubernetes-cosmotech-common-main"
+      - "terraform-kubernetes-cosmotech-tenant-main"
+      - "terraform-azure-cosmotech-tenant-main"
+      - "terraform-azure-cosmotech-common-main"
+      - "helm-charts-main"
+
+  - name: "SDK, Solutions and Libraries"
+    projects:
+      - "CosmoTech-Acceleration-Library-main"
+      - "Babylon-main"
+      - "run-orchestrator-main"
+      - "css-main"
+
+  - name: "Self"
+    projects:
+    - "sonarqube-scanner-main"
+    - "sonarqube-reporter-main"
+    - "sonarqube-ansible-setup-main"
