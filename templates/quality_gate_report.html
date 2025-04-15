@@ -32,49 +32,141 @@
         <h2>Project Quality Gates</h2>
         <p>This report shows the quality gate status for all projects.</p>
         
-        <table>
-            <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>History</th>
-                    <th>Quality Gate</th>
-                    <th>Last Analysis</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for project in projects %}
-                <tr>
-                    <td>{{ project.name }}</td>
-                    <td>
-                        {% if project.history_data and project.history_data['values'] %}
-                        <div class="history-timeline" title="Quality Gate History">
-                            {% for value in project.history_data['values'] %}
-                            <div class="history-square {% if value == 1 %}pass{% elif value == 0.5 %}warn{% else %}fail{% endif %}"></div>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        <span class="no-data">No history</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if project.quality_gate_status == 'OK' %}
-                            <span class="status-indicator" style="background-color: {{ styling.pass_color }};"></span>
-                            <span class="status-ok">PASSED</span>
-                        {% elif project.quality_gate_status == 'WARN' %}
-                            <span class="status-indicator" style="background-color: {{ styling.warning_color }};"></span>
-                            <span class="status-warn">WARNING</span>
-                        {% else %}
-                            <span class="status-indicator" style="background-color: {{ styling.fail_color }};"></span>
-                            <span class="status-error">FAILED</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ project.last_analysis_date | format_date }}</td>
-                    <td><a href="{{ project.url }}" target="_blank">View in SonarQube</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <script>
+            function toggleGroup(groupId) {
+                const content = document.getElementById(groupId);
+                const header = document.getElementById(groupId + '-header');
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    header.classList.remove('collapsed');
+                } else {
+                    content.style.display = 'none';
+                    header.classList.add('collapsed');
+                }
+            }
+        </script>
+
+        <!-- Grouped Projects -->
+        {% for group in projects.groups %}
+        <div class="group-section">
+            <div id="group-{{ loop.index }}-header" class="group-header {% if group.status %}{{ group.status.css_class }}-header{% endif %}" onclick="toggleGroup('group-{{ loop.index }}')">
+                <div class="group-header-content">
+                    <h3>{{ group.name }}</h3>
+                    {% if group.status %}
+                        <span class="group-status">
+                            <span class="status-indicator" style="background-color: {{ group.status.color }};"></span>
+                            <span class="{{ group.status.css_class }}-text">{{ group.status.message }}</span>
+                        </span>
+                    {% endif %}
+                </div>
+                <span class="toggle-indicator">▼</span>
+            </div>
+            <div id="group-{{ loop.index }}" class="group-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>History</th>
+                            <th>Quality Gate</th>
+                            <th>Last Analysis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in group.projects %}
+                        <tr>
+                            <td><a href="{{ project.url }}" target="_blank" class="project-link">{{ project.name }}</a></td>
+                            <td>
+                                {% if project.history_data and project.history_data['values'] %}
+                                <div class="history-timeline" title="Quality Gate History">
+                                    {% for value in project.history_data['values'] %}
+                                    <div class="history-square {% if value == 1 %}pass{% elif value == 0.5 %}warn{% else %}fail{% endif %}"></div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <span class="no-data">No history</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if project.quality_gate_status == 'OK' %}
+                                    <span class="status-indicator" style="background-color: {{ styling.pass_color }};"></span>
+                                    <span class="status-ok">PASSED</span>
+                                {% elif project.quality_gate_status == 'WARN' %}
+                                    <span class="status-indicator" style="background-color: {{ styling.warning_color }};"></span>
+                                    <span class="status-warn">WARNING</span>
+                                {% else %}
+                                    <span class="status-indicator" style="background-color: {{ styling.fail_color }};"></span>
+                                    <span class="status-error">FAILED</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ project.last_analysis_date | format_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Ungrouped Projects -->
+        {% if projects.ungrouped %}
+        <div class="group-section">
+            <div id="group-ungrouped-header" class="group-header {% if projects.ungrouped_status %}{{ projects.ungrouped_status.css_class }}-header{% endif %}" onclick="toggleGroup('group-ungrouped')">
+                <div class="group-header-content">
+                    <h3>Ungrouped Projects</h3>
+                    {% if projects.ungrouped_status %}
+                        <span class="group-status">
+                            <span class="status-indicator" style="background-color: {{ projects.ungrouped_status.color }};"></span>
+                            <span class="{{ projects.ungrouped_status.css_class }}-text">{{ projects.ungrouped_status.message }}</span>
+                        </span>
+                    {% endif %}
+                </div>
+                <span class="toggle-indicator">▼</span>
+            </div>
+            <div id="group-ungrouped" class="group-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>History</th>
+                            <th>Quality Gate</th>
+                            <th>Last Analysis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects.ungrouped %}
+                        <tr>
+                            <td><a href="{{ project.url }}" target="_blank" class="project-link">{{ project.name }}</a></td>
+                            <td>
+                                {% if project.history_data and project.history_data['values'] %}
+                                <div class="history-timeline" title="Quality Gate History">
+                                    {% for value in project.history_data['values'] %}
+                                    <div class="history-square {% if value == 1 %}pass{% elif value == 0.5 %}warn{% else %}fail{% endif %}"></div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <span class="no-data">No history</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if project.quality_gate_status == 'OK' %}
+                                    <span class="status-indicator" style="background-color: {{ styling.pass_color }};"></span>
+                                    <span class="status-ok">PASSED</span>
+                                {% elif project.quality_gate_status == 'WARN' %}
+                                    <span class="status-indicator" style="background-color: {{ styling.warning_color }};"></span>
+                                    <span class="status-warn">WARNING</span>
+                                {% else %}
+                                    <span class="status-indicator" style="background-color: {{ styling.fail_color }};"></span>
+                                    <span class="status-error">FAILED</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ project.last_analysis_date | format_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
     </main>
 
     <footer>

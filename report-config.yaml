@@ -1,7 +1,18 @@
 # SonarQube Reporter Configuration
-# List of project keys to include in the report
-# If empty, all projects will be included
-projects:
-  - "example-project"
-  - "another-project"
-  # Add more project keys as needed
+
+# Project groups for organization in the report
+groups:
+  - name: "backend"
+    projects:
+      - "repository1-release/v5"
+      - "repository1-main"
+
+  - name: "Web Applications"
+    projects:
+      - "webapp-main"
+
+  - name: "Self-test"
+    projects:
+    - "sonarqube-scanner-main"
+    - "sonarqube-reporter-main"
+    - "sonarqube-ansible-setup-main"
