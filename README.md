@@ -18,18 +18,21 @@ uv pip install .
 ```
 Adapt the `report-config.yaml` example file and run the script
 
-```bash
-# Set the environment variable
+Create a script `report.sh`
+
+```shell
+#!/bin/bash
+set -ex
 export SONARQUBE_REPORT_TOKEN=your_sonarqube_token
-
-# Run the script to generate the quality gate report
-python sonarqube_reporter.py
-```
-
-The report will be generated in the `./reports` directory.
-
-Configure crontabl by running `crontab -e` and adapt the following:
+cd /home/terminator/sonarqube-reporter
+. .venv/bin/activate
+sonarqube-reporter
+cp -r reports/* /var/www/html/reports
 
 ```
-0 1 * * * export SONARQUBE_REPORT_TOKEN=<replace with Global Scan Token>; PATH=$PATH:/usr/local/bin; $HOME/sonarqube-reporter/.venv/bin/sonarqube-reporter > $HOME/sonarqube_reporter_last_run.log 2>&1 && cp -r $HOME/sonarqube-reporter/reports/* /var/www/html
+
+Configure crontab by running `crontab -e` and adapt the following:
+
+```
+0 1 * * * * /home/terminator/sonarqube-reporter/report.sh > sonarqube_reporter_last_run.log 2>&1
 ```
