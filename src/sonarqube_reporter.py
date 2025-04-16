@@ -16,8 +16,8 @@ logging.basicConfig(
 
 
 class SimpleConfig:
-    def get_sonarqube_url(self):
-        return "https://localhost:9000"
+    def __init__(self, sonarqube_url=None):
+        self.sonarqube_url=sonarqube_url
 
     def get_styling(self):
         return {
@@ -36,7 +36,9 @@ class SimpleConfig:
 
 @click.command()
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
-def main(verbose):
+@click.option("--url", "-u", default="https://localhost:9000",
+              help="SonarQube server URL")
+def main(verbose, url):
     """Generate a quality gate report from SonarQube data.
 
     This tool connects to a SonarQube server, retrieves project data,
@@ -46,8 +48,8 @@ def main(verbose):
         logger.setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
     token = os.getenv("SONARQUBE_REPORT_TOKEN")
-    config = SimpleConfig()
-    client = SonarQubeClient(config.get_sonarqube_url(), token)
+    config = SimpleConfig(sonarqube_url=url)
+    client = SonarQubeClient(config.sonarqube_url, token)
     # Initialize data processor
     data_processor = DataProcessor(client)
     # Get projects data

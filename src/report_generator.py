@@ -24,7 +24,7 @@ class ReportGenerator:
             templates_dir (str): Directory containing HTML templates.
         """
         self.config = config
-        self.sonarqube_url = config.get_sonarqube_url()
+        self.sonarqube_url = config.sonarqube_url
         self.styling = config.get_styling()
 
         # Set up Jinja2 environment
