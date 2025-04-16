@@ -86,11 +86,11 @@ class DataProcessor:
             projects_data.append(project_data)
 
         logger.info(f"Processed data for {len(projects_data)} projects")
-        
+
         # Organize projects into groups
         grouped_data = self._process_groups(projects_data)
         overall_status = self._calculate_overall_status(projects_data)
-        
+
         return grouped_data, overall_status
 
     def _calculate_overall_status(self, projects_data):
@@ -219,7 +219,7 @@ class DataProcessor:
                 logger.info("No report-config.yaml found, will include all projects")
                 return [], []
 
-            with open(config_path, 'r') as f:
+            with open(config_path, "r") as f:
                 config = yaml.safe_load(f)
 
             if not config or not isinstance(config, dict):
@@ -227,13 +227,13 @@ class DataProcessor:
                 return [], []
 
             # Load groups configuration
-            groups = config.get('groups', [])
+            groups = config.get("groups", [])
             if not isinstance(groups, list):
                 logger.warning("Groups configuration must be a list")
                 groups = []
 
             # Load ungrouped projects
-            projects = config.get('projects', [])
+            projects = config.get("projects", [])
             if not isinstance(projects, list):
                 logger.warning("Projects configuration must be a list")
                 projects = []
@@ -241,10 +241,12 @@ class DataProcessor:
             # Combine all project keys for filtering
             all_projects = projects.copy()
             for group in groups:
-                if isinstance(group, dict) and 'projects' in group:
-                    all_projects.extend(group['projects'])
+                if isinstance(group, dict) and "projects" in group:
+                    all_projects.extend(group["projects"])
 
-            logger.info(f"Loaded {len(all_projects)} projects and {len(groups)} groups from configuration")
+            logger.info(
+                f"Loaded {len(all_projects)} projects and {len(groups)} groups from configuration"
+            )
             return all_projects, groups
 
         except Exception as e:
@@ -277,7 +279,7 @@ class DataProcessor:
                 "label": "FAILED",
                 "css_class": "fail",
                 "color": "var(--fail-color)",
-                "message": f"{status_counts['ERROR']} failed"
+                "message": f"{status_counts['ERROR']} failed",
             }
         elif status_counts.get("WARN", 0) > 0:
             return {
@@ -285,7 +287,7 @@ class DataProcessor:
                 "label": "WARNING",
                 "css_class": "warn",
                 "color": "var(--warning-color)",
-                "message": f"{status_counts['WARN']} warnings"
+                "message": f"{status_counts['WARN']} warnings",
             }
         elif status_counts.get("OK", 0) > 0:
             return {
@@ -293,7 +295,7 @@ class DataProcessor:
                 "label": "PASSED",
                 "css_class": "pass",
                 "color": "var(--pass-color)",
-                "message": "All passed"
+                "message": "All passed",
             }
         return None
 
@@ -308,12 +310,9 @@ class DataProcessor:
             dict: Projects organized by groups and "ungrouped" section with status information.
         """
         _, groups = self._load_project_config()
-        
+
         # Initialize result structure
-        grouped_projects = {
-            "groups": [],
-            "ungrouped": []
-        }
+        grouped_projects = {"groups": [], "ungrouped": []}
 
         # Create a map of project key to project data for efficient lookup
         project_map = {p["key"]: p for p in projects_data}
@@ -321,7 +320,7 @@ class DataProcessor:
         # Process each group
         for group in groups:
             group_projects = []
-            
+
             # Add projects to group
             for project_key in group.get("projects", []):
                 if project_key in project_map:
@@ -333,15 +332,19 @@ class DataProcessor:
             group_data = {
                 "name": group.get("name", "Unnamed Group"),
                 "projects": group_projects,
-                "status": self._calculate_group_status(group_projects)
+                "status": self._calculate_group_status(group_projects),
             }
-            
+
             grouped_projects["groups"].append(group_data)
 
         # Add remaining projects to ungrouped section with status
         ungrouped_projects = list(project_map.values())
         grouped_projects["ungrouped"] = ungrouped_projects
-        grouped_projects["ungrouped_status"] = self._calculate_group_status(ungrouped_projects)
+        grouped_projects["ungrouped_status"] = self._calculate_group_status(
+            ungrouped_projects
+        )
 
-        logger.info(f"Processed {len(groups)} groups and {len(ungrouped_projects)} ungrouped projects")
+        logger.info(
+            f"Processed {len(groups)} groups and {len(ungrouped_projects)} ungrouped projects"
+        )
         return grouped_projects
