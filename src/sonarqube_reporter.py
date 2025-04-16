@@ -15,6 +15,25 @@ logging.basicConfig(
 )
 
 
+class SimpleConfig:
+    def get_sonarqube_url(self):
+        return "https://localhost:9000"
+
+    def get_styling(self):
+        return {
+            "primary_color": "#4b9fd5",
+            "secondary_color": "#236a97",
+            "pass_color": "#00aa00",
+            "fail_color": "#d4333f",
+            "warning_color": "#ed7d20",
+        }
+
+    def get_quality_gate_report_path(self):
+        # Ensure reports directory exists
+        os.makedirs("reports", exist_ok=True)
+        return "reports/quality_gate_report.html"
+
+
 @click.command()
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 def main(verbose):
@@ -27,8 +46,8 @@ def main(verbose):
         logger.setLevel(logging.DEBUG)
         logger.debug("Verbose mode enabled")
     token = os.getenv("SONARQUBE_REPORT_TOKEN")
-
-    client = SonarQubeClient("http://localhost:9000", token)
+    config = SimpleConfig()
+    client = SonarQubeClient(config.get_sonarqube_url(), token)
     # Initialize data processor
     data_processor = DataProcessor(client)
     # Get projects data
@@ -41,27 +60,8 @@ def main(verbose):
             f"[bold {overall_status['css_class']}]Overall status: {overall_status['label']} QUALITY GATE"
         )
 
-    # Create a simple config object with hardcoded values
-    class SimpleConfig:
-        def get_sonarqube_url(self):
-            return "http://localhost:9000"
-
-        def get_styling(self):
-            return {
-                "primary_color": "#4b9fd5",
-                "secondary_color": "#236a97",
-                "pass_color": "#00aa00",
-                "fail_color": "#d4333f",
-                "warning_color": "#ed7d20",
-            }
-
-        def get_quality_gate_report_path(self):
-            # Ensure reports directory exists
-            os.makedirs("reports", exist_ok=True)
-            return "reports/quality_gate_report.html"
-
     # Initialize report generator with simple config
-    report_generator = ReportGenerator(SimpleConfig())
+    report_generator = ReportGenerator(config)
     # Generate quality gate report
     report_generator.generate_quality_gate_report(projects_data_tuple)
     return 0

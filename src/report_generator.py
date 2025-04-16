@@ -58,7 +58,6 @@ class ReportGenerator:
             title = f"[{overall_status['label']}] SonarQube Quality Gate Report"
         else:
             title = "SonarQube Quality Gate Report"
-
         context = {
             "title": title,
             "generation_date": generation_date,
